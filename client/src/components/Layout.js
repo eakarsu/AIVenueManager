@@ -14,8 +14,20 @@ const navItems = [
   { section: 'AI-Powered', items: [
     { path: '/ticket-pricing', label: 'Ticket Pricing', icon: '🎫' },
     { path: '/seat-assignments', label: 'Seat Assignments', icon: '💺' },
+    { path: '/seat-recommend', label: 'Seat Recommend', icon: '🎯' },
     { path: '/tech-riders', label: 'Tech Riders', icon: '🔧' },
     { path: '/settlements', label: 'Settlements', icon: '💰' }
+  ]},
+  { section: 'New AI Tools', items: [
+    { path: '/ai/dynamic-pricing', label: 'Dynamic Pricing', icon: '💸' },
+    { path: '/ai/revenue-forecast', label: 'Revenue Forecast', icon: '📈' },
+    { path: '/ai/artist-match', label: 'Artist Match', icon: '🎶' },
+    { path: '/ai/marketing-campaign', label: 'Marketing Campaign', icon: '📣' },
+    { path: '/ai/scheduling-optimizer', label: 'Scheduling', icon: '🗓️' }
+  ]},
+  { section: 'Integrations', items: [
+    { path: '/integrations/eventbrite', label: 'Eventbrite Sync', icon: '🎟️' },
+    { path: '/integrations/stripe-payment', label: 'Stripe Payment', icon: '💳' }
   ]}
 ];
 

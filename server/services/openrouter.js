@@ -1,25 +1,42 @@
 const https = require('https');
 require('dotenv').config();
 
-async function callOpenRouter(prompt, systemPrompt = '') {
+const MODEL = 'anthropic/claude-3-5-sonnet-20241022';
+
+function parseAIJson(text) {
+  if (!text) return null;
+  try { return JSON.parse(text); } catch (_) {}
+  try {
+    const stripped = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    return JSON.parse(stripped);
+  } catch (_) {}
+  try {
+    const match = text.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+  } catch (_) {}
+  return null;
+}
+
+async function callOpenRouter(prompt, systemPrompt = '', returnJson = false) {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.OPENROUTER_MODEL || 'anthropic/claude-haiku-4.5';
 
   if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
+    if (process.env.NODE_ENV === 'production') {
+      return { error: true, message: 'AI service not configured' };
+    }
     return { error: false, result: generateFallbackResponse(prompt) };
   }
 
   const messages = [];
-  if (systemPrompt) {
-    messages.push({ role: 'system', content: systemPrompt });
-  }
+  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   messages.push({ role: 'user', content: prompt });
 
   const body = JSON.stringify({
-    model: model,
-    messages: messages,
+    model: MODEL,
+    messages,
     max_tokens: 2000,
-    temperature: 0.7
+    temperature: 0.7,
+    ...(returnJson ? { response_format: { type: 'json_object' } } : {})
   });
 
   return new Promise((resolve) => {
@@ -30,7 +47,7 @@ async function callOpenRouter(prompt, systemPrompt = '') {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': 'http://localhost:3000',
+        'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:3000',
         'X-Title': 'AI Venue Manager'
       }
     };
@@ -42,9 +59,11 @@ async function callOpenRouter(prompt, systemPrompt = '') {
         try {
           const parsed = JSON.parse(data);
           if (parsed.choices && parsed.choices[0]) {
+            const content = parsed.choices[0].message.content;
             resolve({
               error: false,
-              result: parsed.choices[0].message.content,
+              result: content,
+              parsed: parseAIJson(content),
               model: parsed.model,
               usage: parsed.usage
             });
@@ -59,15 +78,8 @@ async function callOpenRouter(prompt, systemPrompt = '') {
       });
     });
 
-    req.on('error', (e) => {
-      resolve({ error: true, message: e.message });
-    });
-
-    req.setTimeout(30000, () => {
-      req.destroy();
-      resolve({ error: true, message: 'Request timed out' });
-    });
-
+    req.on('error', (e) => resolve({ error: true, message: e.message }));
+    req.setTimeout(30000, () => { req.destroy(); resolve({ error: true, message: 'Request timed out' }); });
     req.write(body);
     req.end();
   });
@@ -77,155 +89,18 @@ function generateFallbackResponse(prompt) {
   const lower = prompt.toLowerCase();
 
   if (lower.includes('pricing') || lower.includes('ticket') || lower.includes('price')) {
-    return `## AI Pricing Analysis
-
-**Demand Assessment:** Based on the event parameters, current demand is estimated at **moderate-high** levels.
-
-**Recommended Pricing Strategy:**
-- **Early Bird (first 20% of sales):** 15% discount from base price
-- **Standard Phase:** Base price maintained
-- **High Demand (>70% sold):** Increase by 20-30%
-- **Last Minute (<48hrs, <90% sold):** 10% discount to fill remaining seats
-
-**Key Factors:**
-- Event type and historical attendance patterns
-- Day of week and seasonal trends
-- Competitor pricing in the market
-- Current sell-through rate
-
-**Revenue Optimization Tips:**
-1. Implement tiered pricing with at least 3 levels
-2. Use dynamic pricing that adjusts every 24 hours
-3. Create VIP packages at 2.5x base price
-4. Offer group discounts for 10+ tickets at 12% off
-
-*Configure your OpenRouter API key for personalized AI-powered analysis.*`;
+    return `## AI Pricing Analysis\n\n**Demand Assessment:** Based on the event parameters, current demand is estimated at **moderate-high** levels.\n\n**Recommended Pricing Strategy:**\n- **Early Bird (first 20% of sales):** 15% discount from base price\n- **Standard Phase:** Base price maintained\n- **High Demand (>70% sold):** Increase by 20-30%\n- **Last Minute (<48hrs, <90% sold):** 10% discount to fill remaining seats\n\n*Configure your OpenRouter API key for personalized AI-powered analysis.*`;
   }
-
-  if (lower.includes('seat') || lower.includes('assignment') || lower.includes('layout')) {
-    return `## AI Seat Optimization
-
-**Layout Analysis:**
-- **Optimal Configuration:** Theater-style with curved rows for maximum capacity
-- **Accessibility:** Reserve 2% of seats for ADA compliance
-- **Premium Zones:** First 5 rows and center sections command highest value
-
-**Assignment Recommendations:**
-1. **VIP Section:** Rows A-E, center — best sightlines
-2. **Premium:** Rows F-J, center and near-center
-3. **Standard:** Rows K-T, all positions
-4. **Economy:** Rows U+, side sections
-
-**Optimization Tips:**
-- Group bookings should be assigned contiguous seats
-- Leave buffer rows between sections for crowd flow
-- Aisle seats are 15% more desirable — price accordingly
-- Consider companion seating for accessibility
-
-*Configure your OpenRouter API key for event-specific optimization.*`;
+  if (lower.includes('feasib') || lower.includes('rider') || lower.includes('tech')) {
+    return `{"feasible":true,"missing_items":[],"total_procurement_cost":2500,"recommendations":["Verify sound system coverage","Confirm monitor mix count","Check load-in timeline"]}`;
   }
-
-  if (lower.includes('performer') || lower.includes('book') || lower.includes('artist')) {
-    return `## AI Booking Recommendation
-
-**Performer Match Analysis:**
-Based on the venue type and audience demographics:
-
-**Top Recommendations:**
-1. Consider artists with strong regional following for reliable ticket sales
-2. Pair headliners with complementary opening acts
-3. Evaluate social media engagement (>50K followers preferred)
-
-**Fee Negotiation Tips:**
-- Industry standard: 60-70% of projected ticket revenue
-- Negotiate for percentage deals on events >1000 capacity
-- Include merchandise split (typically 80/20 artist/venue)
-- Build in radius clause (no competing shows within 90 days/60 miles)
-
-**Risk Assessment:**
-- Check cancellation history and reliability ratings
-- Verify insurance requirements
-- Confirm technical rider feasibility for your venue
-
-*Configure your OpenRouter API key for data-driven recommendations.*`;
+  if (lower.includes('settlement') || lower.includes('narrative')) {
+    return `{"executive_summary":"Event performed above projections.","financial_highlights":"Ticket revenue exceeded target by 12%.","performer_payment":15000,"net_revenue":42000,"insights":["Concessions drove 18% of total revenue","Marketing ROI was 3.2x"]}`;
   }
-
-  if (lower.includes('tech') || lower.includes('rider') || lower.includes('equipment')) {
-    return `## AI Tech Rider Analysis
-
-**Equipment Assessment:**
-Based on typical requirements for this type of performance:
-
-**Sound System:**
-- FOH: Full-range PA with minimum 105dB SPL at mix position
-- Monitors: 6 monitor mixes minimum, IEM available
-- Subs: Ground-stacked preferred for venues >500 capacity
-
-**Lighting:**
-- Moving heads: 8-12 units recommended
-- LED wash: Full stage coverage
-- Follow spots: 2 for venues >800 capacity
-- Haze machine required for beam effects
-
-**Stage Requirements:**
-- Minimum 32x24ft performance area
-- Drum riser: 8x8ft, 24" height
-- Cable runs: 150ft minimum snake
-
-**Checklist Status:**
-- ✅ Standard items typically available in-house
-- ⚠️ Specialty items may require rental
-- Budget estimate: $2,000-5,000 for additional rentals
-
-*Configure your OpenRouter API key for detailed technical analysis.*`;
+  if (lower.includes('seat') || lower.includes('recommend')) {
+    return `{"recommended_seats":[{"row":"C","seat":"101-104","section":"Main Floor","reason":"Best sightlines, central position"}],"alternative_options":[{"row":"F","seat":"201-204","section":"Mezzanine","reason":"Elevated view, no obstructions"}]}`;
   }
-
-  if (lower.includes('settlement') || lower.includes('revenue') || lower.includes('profit') || lower.includes('financial')) {
-    return `## AI Financial Analysis
-
-**Settlement Summary:**
-
-**Revenue Breakdown:**
-- Ticket sales typically represent 70-80% of total revenue
-- Concessions average $8-15 per attendee
-- Merchandise can add 5-10% to total revenue
-
-**Expense Optimization:**
-- Performer fees should not exceed 60% of ticket revenue
-- Marketing ROI target: 3:1 minimum
-- Staff costs: Plan for 1 staff per 50 attendees
-
-**Profitability Indicators:**
-- Break-even point: Calculate at 65% capacity
-- Target margin: 15-25% for sustainable operations
-- Cash flow: Ensure 30-day payment terms with vendors
-
-**Recommendations:**
-1. Negotiate volume discounts with regular vendors
-2. Implement dynamic pricing to maximize revenue
-3. Track per-event profitability for trend analysis
-4. Build reserve fund of 10% of annual revenue
-
-*Configure your OpenRouter API key for event-specific financial projections.*`;
-  }
-
-  return `## AI Analysis
-
-Based on your query, here are key recommendations for venue management optimization:
-
-**Strategic Insights:**
-1. Data-driven decision making improves outcomes by 25-40%
-2. Regular performance benchmarking against industry standards
-3. Audience segmentation for targeted marketing
-4. Operational efficiency through process automation
-
-**Action Items:**
-- Review and optimize current workflows
-- Implement performance metrics tracking
-- Analyze historical data for pattern recognition
-- Set up automated reporting dashboards
-
-*Configure your OpenRouter API key in .env for personalized AI-powered analysis.*`;
+  return `## AI Analysis\n\nBased on your query, here are key recommendations for venue management optimization.\n\n*Configure your OpenRouter API key for personalized AI-powered analysis.*`;
 }
 
-module.exports = { callOpenRouter };
+module.exports = { callOpenRouter, parseAIJson };

@@ -1,13 +1,21 @@
 const express = require('express');
 const { Venue } = require('../models');
 const auth = require('../middleware/auth');
+const aiRateLimiter = require('../middleware/aiRateLimiter');
 const { callOpenRouter } = require('../services/openrouter');
 const router = express.Router();
 
+const paginate = (query) => {
+  const page = Math.max(1, parseInt(query.page) || 1);
+  const limit = Math.min(100, parseInt(query.limit) || 20);
+  return { limit, offset: (page - 1) * limit, page };
+};
+
 router.get('/', auth, async (req, res) => {
   try {
-    const venues = await Venue.findAll({ order: [['name', 'ASC']] });
-    res.json(venues);
+    const { limit, offset, page } = paginate(req.query);
+    const { count, rows } = await Venue.findAndCountAll({ order: [['name', 'ASC']], limit, offset });
+    res.json({ data: rows, pagination: { total: count, page, limit, totalPages: Math.ceil(count / limit) } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

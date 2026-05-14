@@ -1,13 +1,23 @@
 const express = require('express');
-const { PerformerBooking, Performer, Event } = require('../models');
+const { PerformerBooking, Performer, Event, Venue, sequelize } = require('../models');
 const auth = require('../middleware/auth');
+const aiRateLimiter = require('../middleware/aiRateLimiter');
 const { callOpenRouter } = require('../services/openrouter');
 const router = express.Router();
 
+const paginate = (query) => {
+  const page = Math.max(1, parseInt(query.page) || 1);
+  const limit = Math.min(100, parseInt(query.limit) || 20);
+  return { limit, offset: (page - 1) * limit, page };
+};
+
 router.get('/', auth, async (req, res) => {
   try {
-    const bookings = await PerformerBooking.findAll({ include: [Performer, Event], order: [['id', 'DESC']] });
-    res.json(bookings);
+    const { limit, offset, page } = paginate(req.query);
+    const { count, rows } = await PerformerBooking.findAndCountAll({
+      include: [Performer, Event], order: [['id', 'DESC']], limit, offset
+    });
+    res.json({ data: rows, pagination: { total: count, page, limit, totalPages: Math.ceil(count / limit) } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -44,28 +54,37 @@ router.delete('/:id', auth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// AI: Analyze booking
-router.post('/ai/analyze', auth, async (req, res) => {
+// AI: DB-grounded analyze booking
+router.post('/ai/analyze', auth, aiRateLimiter, async (req, res) => {
   try {
-    const { performerName, eventName, fee, eventType, capacity } = req.body;
+    const { id, performerName, eventName, fee, eventType, capacity } = req.body;
+    let booking = null;
+    if (id) booking = await PerformerBooking.findByPk(id, { include: [Performer, Event] });
 
-    const prompt = `Analyze this performer booking deal:
+    const pName = booking?.Performer?.name || performerName;
+    const eName = booking?.Event?.name || eventName;
+    const bookingFee = booking?.fee || fee;
+    const eType = booking?.Event?.type || eventType;
+    const cap = booking?.Event?.capacity || capacity;
+    const genre = booking?.Performer?.genre || 'Unknown';
+    const performerRating = booking?.Performer?.rating || 'N/A';
+    const contractSigned = booking?.contractSigned || false;
 
-Performer: ${performerName}
-Event: ${eventName}
-Event Type: ${eventType}
-Booking Fee: $${fee}
-Venue Capacity: ${capacity}
+    const prompt = `Analyze this performer booking deal. Return analysis.
 
-Provide analysis including:
-1. Is the fee reasonable for this type of event and capacity?
-2. Expected ROI from this booking
-3. Contract recommendations
-4. Marketing strategy to leverage this booking
-5. Potential risks and mitigation strategies
-6. Comparable booking benchmarks`;
+Performer: ${pName} (Genre: ${genre}, Rating: ${performerRating}/5)
+Event: ${eName} (${eType})
+Booking Fee: $${bookingFee}
+Venue Capacity: ${cap}
+Contract Signed: ${contractSigned}
+
+Analyze: 1) Fee reasonableness 2) Expected ROI 3) Contract recommendations 4) Marketing strategy 5) Risks 6) Benchmarks`;
 
     const aiResponse = await callOpenRouter(prompt, 'You are an expert entertainment business analyst specializing in live event performer bookings.');
+    await sequelize.query(
+      `INSERT INTO ai_results (user_id, endpoint, input_data, result) VALUES ($1, $2, $3, $4)`,
+      { bind: [req.user.id, 'performer-bookings/ai/analyze', JSON.stringify({ id, performerName: pName, fee: bookingFee }), JSON.stringify(aiResponse.result)] }
+    );
     res.json(aiResponse);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

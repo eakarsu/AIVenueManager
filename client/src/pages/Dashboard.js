@@ -10,7 +10,8 @@ const features = [
   { path: '/performer-bookings', title: 'Performer Booking', desc: 'AI-assisted booking with fee analysis and contract management', icon: '📋', badge: 'ai', colors: ['#10b981', '#34d399'] },
   { path: '/tech-riders', title: 'Tech Rider Management', desc: 'AI analysis of technical requirements and equipment needs', icon: '🔧', badge: 'ai', colors: ['#ef4444', '#f87171'] },
   { path: '/settlements', title: 'Settlement Reporting', desc: 'AI financial analysis with revenue and expense tracking', icon: '💰', badge: 'ai', colors: ['#22c55e', '#4ade80'] },
-  { path: '/venues', title: 'Venue Management', desc: 'AI-powered venue analysis and optimization recommendations', icon: '🏟️', badge: 'ai', colors: ['#3b82f6', '#60a5fa'] }
+  { path: '/venues', title: 'Venue Management', desc: 'AI-powered venue analysis and optimization recommendations', icon: '🏟️', badge: 'ai', colors: ['#3b82f6', '#60a5fa'] },
+  { path: '/seat-recommend', title: 'AI Seat Recommendation', desc: 'Find the best contiguous seat blocks for any party — budget, accessibility, view-aware', icon: '🎯', badge: 'ai', colors: ['#a855f7', '#d946ef'] }
 ];
 
 export default function Dashboard() {
