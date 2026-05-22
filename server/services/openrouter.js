@@ -1,7 +1,7 @@
 const https = require('https');
 require('dotenv').config();
 
-const MODEL = 'anthropic/claude-3-5-sonnet-20241022';
+const MODEL = process.env.OPENROUTER_MODEL || 'anthropic/claude-3-5-sonnet-20241022';
 
 function parseAIJson(text) {
   if (!text) return null;

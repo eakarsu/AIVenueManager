@@ -19,6 +19,11 @@ import AIMarketingCampaignPage from './pages/AIMarketingCampaignPage';
 import AISchedulingOptimizerPage from './pages/AISchedulingOptimizerPage';
 import EventbriteSyncPage from './pages/EventbriteSyncPage';
 import StripePaymentPage from './pages/StripePaymentPage';
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 // === Batch 08 Gaps & Frontend Mounts ===
 import CfDynamicPricingOptimizerAdjustingByDemandTime from './pages/CfDynamicPricingOptimizerAdjustingByDemandTime'
 import CfArtistAudienceMatcherRecommendingArtistsByTarget from './pages/CfArtistAudienceMatcherRecommendingArtistsByTarget'
@@ -65,6 +70,10 @@ function App() {
     <Router>
       <Layout user={user} onLogout={handleLogout}>
         <Routes>
+        <Route path="/insights/timeline" element={<ProtectedRoute><TimelineView /></ProtectedRoute>} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
           <Route path="/" element={<Dashboard />} />
           <Route path="/events" element={<EventsPage />} />
           <Route path="/ticket-pricing" element={<TicketPricingPage />} />
