@@ -2,6 +2,7 @@ require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const { sequelize, User, Event, TicketPricing, SeatAssignment, Performer, PerformerBooking, TechRider, SettlementReport, Venue } = require('./models');
 
+if(process.env.ALLOW_DESTRUCTIVE_DEMO_SEED!=='true'){console.error('Refusing destructive demo seed; set ALLOW_DESTRUCTIVE_DEMO_SEED=true only for an isolated disposable database.');process.exit(2);}
 async function seed() {
   try {
     await sequelize.authenticate();
@@ -10,11 +11,17 @@ async function seed() {
     console.log('✅ Tables recreated');
 
     // Users
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const adminEmail = process.env.SEED_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD || process.env.ADMIN_PASSWORD;
+    const tenantId = process.env.SEED_TENANT_ID || process.env.TENANT_ID;
+    if (!adminEmail || !adminPassword || !tenantId) {
+      throw new Error('SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, and SEED_TENANT_ID are required');
+    }
+    const hashedPassword = await bcrypt.hash(adminPassword, 12);
     await User.bulkCreate([
-      { name: 'Admin User', email: 'admin@venue.com', password: hashedPassword, role: 'admin' },
-      { name: 'Sarah Manager', email: 'sarah@venue.com', password: hashedPassword, role: 'manager' },
-      { name: 'Mike Staff', email: 'mike@venue.com', password: hashedPassword, role: 'staff' }
+      { name: process.env.BOOTSTRAP_ADMIN_NAME || 'Admin User', email: adminEmail, password: hashedPassword, role: 'admin', tenantId },
+      { name: 'Sarah Manager', email: 'sarah@venue.invalid', password: hashedPassword, role: 'manager', tenantId },
+      { name: 'Mike Staff', email: 'mike@venue.invalid', password: hashedPassword, role: 'staff', tenantId }
     ]);
     console.log('✅ Users seeded');
 
@@ -192,7 +199,7 @@ async function seed() {
     console.log('✅ Settlement Reports seeded (16)');
 
     console.log('\n🎉 All seed data inserted successfully!');
-    console.log('📧 Login: admin@venue.com / password123');
+    console.log(`Admin identity provisioned for ${adminEmail}`);
     process.exit(0);
   } catch (err) {
     console.error('❌ Seeding failed:', err.message);

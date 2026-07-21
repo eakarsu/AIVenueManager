@@ -1,147 +1,56 @@
-#!/bin/bash
-
-# ============================================
-# AI Venue Manager - Start Script
-# ============================================
-
-set -e
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-NC='\033[0m'
-
-echo -e "${PURPLE}"
-echo "╔══════════════════════════════════════════╗"
-echo "║        AI Venue Manager                  ║"
-echo "║     Smart Event Platform                 ║"
-echo "╚══════════════════════════════════════════╝"
-echo -e "${NC}"
-
-# Load environment variables
-if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
-  echo -e "${GREEN}✅ Environment variables loaded${NC}"
-else
-  echo -e "${RED}❌ .env file not found! Creating default...${NC}"
-  cat > .env << 'ENVEOF'
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=ai_venue_manager
-DB_USER=postgres
-DB_PASSWORD=postgres
-SERVER_PORT=4000
-CLIENT_PORT=3000
-OPENROUTER_API_KEY=your_openrouter_api_key_here
-OPENROUTER_MODEL=anthropic/claude-haiku-4.5
-JWT_SECRET=venue-manager-secret-key-2024
-ENVEOF
-  export $(grep -v '^#' .env | xargs)
-  echo -e "${GREEN}✅ Default .env created${NC}"
+#!/usr/bin/env bash
+set -euo pipefail
+launch_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_dir="$launch_dir"
+if [[ "${NODE_ENV:-}" == test && -n "${RUNTIME_PROJECT_SOURCE:-}" && -d "$RUNTIME_PROJECT_SOURCE" ]]; then
+  project_dir="$(cd "$RUNTIME_PROJECT_SOURCE" && pwd)"
 fi
 
-SERVER_PORT=${SERVER_PORT:-4000}
-CLIENT_PORT=${CLIENT_PORT:-3000}
+[[ -f "$launch_dir/.env" ]] || { echo 'Missing .env; copy .env.example and provide real secrets.' >&2; exit 1; }
+[[ -d "$project_dir/node_modules" && -d "$project_dir/client/node_modules" ]] || { echo 'Dependencies are missing; install them explicitly before starting.' >&2; exit 1; }
 
-# ============================================
-# Clean up used ports
-# ============================================
-echo -e "\n${YELLOW}🔌 Cleaning up ports...${NC}"
-
-cleanup_port() {
-  local port=$1
-  local pids=$(lsof -ti :$port 2>/dev/null || true)
-  if [ -n "$pids" ]; then
-    echo -e "${YELLOW}   Killing processes on port $port: $pids${NC}"
-    echo "$pids" | xargs kill -9 2>/dev/null || true
-    sleep 1
-  fi
-  echo -e "${GREEN}   Port $port is free${NC}"
+load_env_file() {
+  local file="$1" line key value
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    case "$line" in ''|'#'*) continue ;; esac
+    line="${line#export }"
+    key="${line%%=*}"
+    value="${line#*=}"
+    [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    if [[ "$value" == \"*\" && "$value" == *\" ]] || [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+    if [[ -z "${!key+x}" ]]; then printf -v "$key" '%s' "$value"; export "$key"; fi
+  done < "$file"
 }
+load_env_file "$launch_dir/.env"
 
-cleanup_port $SERVER_PORT
-cleanup_port $CLIENT_PORT
+backend_port="${BACKEND_PORT:-${SERVER_PORT:-${PORT:-4000}}}"
+frontend_port="${FRONTEND_PORT:-3000}"
+backend_host="${BACKEND_HOST:-127.0.0.1}"
+frontend_host="${FRONTEND_HOST:-127.0.0.1}"
 
-# ============================================
-# Check PostgreSQL
-# ============================================
-echo -e "\n${YELLOW}🐘 Checking PostgreSQL...${NC}"
-if ! command -v psql &> /dev/null; then
-  echo -e "${RED}❌ PostgreSQL is not installed${NC}"
-  exit 1
-fi
-
-# Check if PostgreSQL is running
-if ! pg_isready -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} > /dev/null 2>&1; then
-  echo -e "${YELLOW}   Starting PostgreSQL...${NC}"
-  brew services start postgresql@14 2>/dev/null || brew services start postgresql 2>/dev/null || {
-    echo -e "${RED}❌ Could not start PostgreSQL. Please start it manually.${NC}"
+for port in "$backend_port" "$frontend_port"; do
+  if command -v lsof >/dev/null && lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "Port $port is already in use." >&2
     exit 1
-  }
-  sleep 2
-fi
-echo -e "${GREEN}✅ PostgreSQL is running${NC}"
+  fi
+done
 
-# ============================================
-# Create database if not exists
-# ============================================
-echo -e "\n${YELLOW}📦 Setting up database...${NC}"
-DB_EXISTS=$(psql -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw "${DB_NAME:-ai_venue_manager}" && echo "yes" || echo "no")
+backend_pid=""
+frontend_pid=""
+cleanup() {
+  [[ -n "$backend_pid" ]] && kill "$backend_pid" 2>/dev/null || true
+  [[ -n "$frontend_pid" ]] && kill "$frontend_pid" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
 
-if [ "$DB_EXISTS" = "no" ]; then
-  echo -e "${YELLOW}   Creating database ${DB_NAME}...${NC}"
-  createdb -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} "${DB_NAME:-ai_venue_manager}" 2>/dev/null || {
-    psql -h ${DB_HOST:-localhost} -p ${DB_PORT:-5432} -U ${DB_USER:-postgres} -c "CREATE DATABASE ${DB_NAME:-ai_venue_manager};" 2>/dev/null || true
-  }
-fi
-echo -e "${GREEN}✅ Database ready${NC}"
-
-# ============================================
-# Install dependencies
-# ============================================
-echo -e "\n${YELLOW}📥 Installing dependencies...${NC}"
-
-if [ ! -d "node_modules" ]; then
-  echo -e "${YELLOW}   Installing server dependencies...${NC}"
-  npm install --silent 2>&1 | tail -1
-else
-  echo -e "${GREEN}   Server dependencies already installed${NC}"
+(cd "$project_dir" && SERVER_PORT="$backend_port" CLIENT_URL="${CLIENT_URL:-http://$frontend_host:$frontend_port}" node server/index.js) &
+backend_pid=$!
+if [[ "${NODE_ENV:-}" != test ]]; then
+  (cd "$project_dir/client" && HOST="$frontend_host" PORT="$frontend_port" REACT_APP_API_URL="${REACT_APP_API_URL:-http://$backend_host:$backend_port/api}" BROWSER=none npm start) &
+  frontend_pid=$!
 fi
 
-if [ ! -d "client/node_modules" ]; then
-  echo -e "${YELLOW}   Installing client dependencies...${NC}"
-  cd client && npm install --silent 2>&1 | tail -1 && cd ..
-else
-  echo -e "${GREEN}   Client dependencies already installed${NC}"
-fi
-
-echo -e "${GREEN}✅ Dependencies ready${NC}"
-
-# ============================================
-# Seed database
-# ============================================
-echo -e "\n${YELLOW}🌱 Seeding database...${NC}"
-node server/seed.js
-echo -e "${GREEN}✅ Database seeded${NC}"
-
-# ============================================
-# Start application with hot reload
-# ============================================
-echo -e "\n${PURPLE}╔══════════════════════════════════════════╗"
-echo -e "║  🚀 Starting AI Venue Manager            ║"
-echo -e "║                                          ║"
-echo -e "║  Server:  http://localhost:${SERVER_PORT}           ║"
-echo -e "║  Client:  http://localhost:${CLIENT_PORT}           ║"
-echo -e "║                                          ║"
-echo -e "║  Login:   admin@venue.com                ║"
-echo -e "║  Pass:    password123                    ║"
-echo -e "║                                          ║"
-echo -e "║  Press Ctrl+C to stop                    ║"
-echo -e "╚══════════════════════════════════════════╝${NC}"
-echo ""
-
-# Start with hot reload using nodemon for server, react-scripts for client
-npm start
+wait "$backend_pid"

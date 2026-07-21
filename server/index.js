@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
 const { sequelize } = require('./models');
+const auth = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.SERVER_PORT || 4000;
@@ -16,8 +17,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Routes
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api', auth);
+app.use('/api/fulfillment-workflow', require('./routes/fulfillmentWorkflow'));
+app.use(/^\/api\/(?:ai(?:\/|$)|gap-|integrations?(?:\/|$)|webhooks?(?:\/|$)|dynamic-pricing-optimizer|artist-audience-matcher|revenue-prediction|scheduling-optimizer|marketing-campaign-recommender|patron-crm)/, (_req,res)=>res.status(503).json({error:'generated/direct-provider endpoints are quarantined; use fulfillment-workflow deliveries'}));
+// Routes
 app.use('/api/events', require('./routes/events'));
 app.use('/api/ticket-pricing', require('./routes/ticketPricing'));
 app.use('/api/seat-assignments', require('./routes/seatAssignments'));
@@ -28,30 +33,13 @@ app.use('/api/settlements', require('./routes/settlements'));
 app.use('/api/venues', require('./routes/venues'));
 app.use('/api/ai', require('./routes/ai'));
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // Database sync and start
 async function start() {
   try {
     await sequelize.authenticate();
     console.log('Database connected');
-    await sequelize.sync({ force: false });
-    console.log('Models synchronized');
-
-    // Create ai_results table if not exists
-    await sequelize.query(`
-      CREATE TABLE IF NOT EXISTS ai_results (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER,
-        endpoint VARCHAR(100),
-        input_data JSONB,
-        result JSONB,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
+    const [ready] = await sequelize.query("SELECT to_regclass('public.venue_fulfillment_orders') AS workflow, to_regclass('public.venue_fulfillment_audit') AS audit");
+    if (!ready[0].workflow || !ready[0].audit) throw new Error('database migrations are pending; run npm run migrate');
 
     app.use('/api/dynamic-pricing-optimizer', require('./routes/dynamicPricingOptimizer')); app.use('/api/artist-audience-matcher', require('./routes/artistAudienceMatcher')); app.use('/api/revenue-prediction', require('./routes/revenuePrediction')); app.use('/api/scheduling-optimizer', require('./routes/schedulingOptimizer')); app.use('/api/marketing-campaign-recommender', require('./routes/marketingCampaignRecommender')); app.use('/api/patron-crm', require('./routes/patronCrm'));
 
