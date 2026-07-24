@@ -46,10 +46,13 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-(cd "$project_dir" && SERVER_PORT="$backend_port" CLIENT_URL="${CLIENT_URL:-http://$frontend_host:$frontend_port}" node server/index.js) &
+if [[ "${MIGRATE_ON_START:-false}" == "true" || "${ALLOW_SCHEMA_MIGRATION:-false}" == "true" ]]; then
+  (cd "$project_dir" && node server/scripts/migrate.js && node server/scripts/runtime-bootstrap.js)
+fi
+(cd "$project_dir" && SERVER_PORT="$backend_port" CLIENT_URL="${CLIENT_URL:-http://$frontend_host:$frontend_port}" exec node server/index.js) &
 backend_pid=$!
 if [[ "${NODE_ENV:-}" != test ]]; then
-  (cd "$project_dir/client" && HOST="$frontend_host" PORT="$frontend_port" REACT_APP_API_URL="${REACT_APP_API_URL:-http://$backend_host:$backend_port/api}" BROWSER=none npm start) &
+  (cd "$project_dir/client" && HOST="$frontend_host" PORT="$frontend_port" REACT_APP_API_URL="${REACT_APP_API_URL:-http://$backend_host:$backend_port/api}" BROWSER=none exec ./node_modules/.bin/react-scripts start) &
   frontend_pid=$!
 fi
 

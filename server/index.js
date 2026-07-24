@@ -21,7 +21,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', auth);
 app.use('/api/fulfillment-workflow', require('./routes/fulfillmentWorkflow'));
-app.use(/^\/api\/(?:ai(?:\/|$)|gap-|integrations?(?:\/|$)|webhooks?(?:\/|$)|dynamic-pricing-optimizer|artist-audience-matcher|revenue-prediction|scheduling-optimizer|marketing-campaign-recommender|patron-crm)/, (_req,res)=>res.status(503).json({error:'generated/direct-provider endpoints are quarantined; use fulfillment-workflow deliveries'}));
+app.use(/^\/api\/(?:gap-|integrations?(?:\/|$)|webhooks?(?:\/|$)|dynamic-pricing-optimizer|artist-audience-matcher|revenue-prediction|scheduling-optimizer|marketing-campaign-recommender|patron-crm)/, (_req,res)=>res.status(503).json({error:'generated/direct-provider endpoints are quarantined; use fulfillment-workflow deliveries'}));
 // Routes
 app.use('/api/events', require('./routes/events'));
 app.use('/api/ticket-pricing', require('./routes/ticketPricing'));
