@@ -25,7 +25,10 @@ export default function Login({ onLogin }) {
   const autofill = () => {
     setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
     setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+    setError('');
   };
+  const demoAvailable = process.env.REACT_APP_ENABLE_DEMO_CREDENTIAL_AUTOFILL === 'true'
+    && Boolean(process.env.REACT_APP_DEMO_EMAIL && process.env.REACT_APP_DEMO_PASSWORD);
 
   return (
     <div className="login-page">
@@ -60,9 +63,10 @@ export default function Login({ onLogin }) {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-        <button className="btn-autofill" onClick={autofill}>
-          Auto Fill Demo Credentials
+        <button type="button" className="btn-autofill" onClick={autofill} disabled={!demoAvailable}>
+          Fill demo credentials
         </button>
+        {!demoAvailable && <p role="status">Demo credentials are not configured for this client build.</p>}
       </div>
     </div>
   );

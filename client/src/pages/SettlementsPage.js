@@ -1,3 +1,5 @@
+import AIWorkspaceModal from '../components/AIWorkspaceModal';
+import '../components/AIWorkspace.css';
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
@@ -117,7 +119,7 @@ export default function SettlementsPage() {
             <button className="btn btn-delete" onClick={() => handleDelete(selected.id)}>Delete</button>
           </div>
         </div>
-        <div className="detail-view">
+        <AIWorkspaceModal title="Record details" onClose={() => setSelected(null)}>
           <div className="detail-header"><h2>{selected.Event?.name} — Settlement</h2><span className={`status-badge status-${selected.status}`}>{selected.status}</span></div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
             <div className="stat-card" style={{ textAlign: 'center' }}>
@@ -144,7 +146,7 @@ export default function SettlementsPage() {
             <div className="detail-field"><label>Misc Expenses</label><div className="value">{fmt(selected.miscExpenses)}</div></div>
             <div className="detail-field" style={{ gridColumn: '1 / -1' }}><label>Notes</label><div className="value">{selected.notes}</div></div>
           </div>
-        </div>
+        </AIWorkspaceModal>
 
         {/* AI Narrative (structured) */}
         {narrativeLoading && <AIResponse data={null} loading={true} />}

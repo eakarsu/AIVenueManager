@@ -1,3 +1,5 @@
+import AIWorkspaceModal from '../components/AIWorkspaceModal';
+import '../components/AIWorkspace.css';
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
@@ -118,7 +120,7 @@ export default function EventsPage() {
             <button className="btn btn-delete" onClick={() => handleDelete(selected.id)}>Delete</button>
           </div>
         </div>
-        <div className="detail-view">
+        <AIWorkspaceModal title="Record details" onClose={() => setSelected(null)}>
           <div className="detail-header">
             <h2>{selected.name}</h2>
             <span className={`status-badge status-${selected.status}`}>{selected.status}</span>
@@ -132,7 +134,7 @@ export default function EventsPage() {
             <div className="detail-field"><label>Genre</label><div className="value">{selected.genre}</div></div>
             <div className="detail-field" style={{ gridColumn: '1 / -1' }}><label>Description</label><div className="value">{selected.description}</div></div>
           </div>
-        </div>
+        </AIWorkspaceModal>
 
         {/* AI Forecast Display */}
         {forecast && !forecast.error && f && (
@@ -177,6 +179,7 @@ export default function EventsPage() {
             )}
           </div>
         )}
+        {forecast && !forecast.error && <AIResponse data={forecast} loading={false} />}
         {forecastLoading && <AIResponse data={null} loading={true} />}
         {forecast?.error && <div className="error-message" style={{ padding: 16, marginTop: 16 }}>AI Forecast Error: {forecast.message}</div>}
 

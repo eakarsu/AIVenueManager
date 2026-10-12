@@ -1,3 +1,5 @@
+import AIWorkspaceModal from '../components/AIWorkspaceModal';
+import '../components/AIWorkspace.css';
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
@@ -106,7 +108,7 @@ export default function TicketPricingPage() {
             <button className="btn btn-delete" onClick={() => handleDelete(selected.id)}>Delete</button>
           </div>
         </div>
-        <div className="detail-view">
+        <AIWorkspaceModal title="Record details" onClose={() => setSelected(null)}>
           <div className="detail-header"><h2>{selected.tierName}</h2></div>
           <div className="detail-grid">
             <div className="detail-field"><label>Event</label><div className="value">{event?.name || `Event #${selected.eventId}`}</div></div>
@@ -117,7 +119,7 @@ export default function TicketPricingPage() {
             <div className="detail-field"><label>Seats Sold</label><div className="value">{selected.soldSeats} / {selected.totalSeats} ({sellPct}%)</div></div>
             <div className="detail-field"><label>Price Range</label><div className="value">${selected.minPrice} — ${selected.maxPrice}</div></div>
           </div>
-        </div>
+        </AIWorkspaceModal>
 
         {/* Auto-Adjust Results */}
         {autoAdjustLoading && <AIResponse data={null} loading={true} />}

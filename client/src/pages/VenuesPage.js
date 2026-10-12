@@ -1,3 +1,5 @@
+import AIWorkspaceModal from '../components/AIWorkspaceModal';
+import '../components/AIWorkspace.css';
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
@@ -48,7 +50,7 @@ export default function VenuesPage() {
             <button className="btn btn-delete" onClick={() => handleDelete(selected.id)}>Delete</button>
           </div>
         </div>
-        <div className="detail-view">
+        <AIWorkspaceModal title="Record details" onClose={() => setSelected(null)}>
           <div className="detail-header"><h2>{selected.name}</h2><span className={`status-badge status-${selected.status}`}>{selected.status}</span></div>
           <div className="detail-grid">
             <div className="detail-field"><label>Type</label><div className="value">{selected.type}</div></div>
@@ -61,7 +63,7 @@ export default function VenuesPage() {
             <div className="detail-field"><label>Contact Phone</label><div className="value">{selected.contactPhone}</div></div>
             <div className="detail-field" style={{ gridColumn: '1 / -1' }}><label>Amenities</label><div className="value">{selected.amenities}</div></div>
           </div>
-        </div>
+        </AIWorkspaceModal>
         <AIResponse data={aiData} loading={aiLoading} />
       </div>
     );

@@ -1,0 +1,121 @@
+[
+  {
+    "name": "CfArtistAudienceMatcherRecommendingArtistsByTarget",
+    "id": "cf-artist-audience-matcher-recommending-artists-by-target-audience/history",
+    "title": "Artist/audience matcher recommending artists by target audience",
+    "description": "Prepare a professional advisory report for artist/audience matcher recommending artists by target audience using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "CfDynamicPricingOptimizerAdjustingByDemandTime",
+    "id": "cf-dynamic-pricing-optimizer-adjusting-by-demand-time-to-event-comparables/history",
+    "title": "Dynamic pricing optimizer adjusting by demand/time-to-event/comparables",
+    "description": "Prepare a professional advisory report for dynamic pricing optimizer adjusting by demand/time-to-event/comparables using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "CfMarketingCampaignRecommenderSuggestingChannelsBudgets",
+    "id": "cf-marketing-campaign-recommender-suggesting-channels-budgets/history",
+    "title": "Marketing campaign recommender suggesting channels/budgets",
+    "description": "Prepare a professional advisory report for marketing campaign recommender suggesting channels/budgets using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "CfPatronCrmWithLoyaltySeasonTicketSubscription",
+    "id": "cf-patron-crm-with-loyalty-season-ticket-subscription-support/history",
+    "title": "Patron CRM with loyalty/season-ticket subscription support",
+    "description": "Prepare a professional advisory report for patron crm with loyalty/season-ticket subscription support using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "CfRevenuePredictionForecastingEventProfitability",
+    "id": "cf-revenue-prediction-forecasting-event-profitability/history",
+    "title": "Revenue prediction forecasting event profitability",
+    "description": "Prepare a professional advisory report for revenue prediction forecasting event profitability using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "CfSchedulingOptimizerMinimizingCannibalizationAcrossEvents",
+    "id": "cf-scheduling-optimizer-minimizing-cannibalization-across-events/history",
+    "title": "Scheduling optimizer minimizing cannibalization across events",
+    "description": "Prepare a professional advisory report for scheduling optimizer minimizing cannibalization across events using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoAiArtistAudienceMatching",
+    "id": "gap-no-ai-artist-audience-matching/history",
+    "title": "No AI artist/audience matching",
+    "description": "Prepare a professional advisory report for no ai artist/audience matching using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoAiDemandForecasting",
+    "id": "gap-no-ai-demand-forecasting/history",
+    "title": "No AI demand forecasting",
+    "description": "Prepare a professional advisory report for no ai demand forecasting using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoAiDynamicPricingBasedOnDemand",
+    "id": "gap-no-ai-dynamic-pricing-based-on-demand/history",
+    "title": "No AI dynamic pricing based on demand",
+    "description": "Prepare a professional advisory report for no ai dynamic pricing based on demand using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoAuditLogging",
+    "id": "gap-no-audit-logging/history",
+    "title": "No audit logging",
+    "description": "Prepare a professional advisory report for no audit logging using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoCustomerSelfServicePortal",
+    "id": "gap-no-customer-self-service-portal/history",
+    "title": "No customer self-service portal",
+    "description": "Prepare a professional advisory report for no customer self-service portal using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoIntegrationsWithTicketingPlatformsEventbriteTicketmaster",
+    "id": "gap-no-integrations-with-ticketing-platforms-eventbrite-ticketmaster/history",
+    "title": "No integrations with ticketing platforms (Eventbrite, Ticketmaster)",
+    "description": "Prepare a professional advisory report for no integrations with ticketing platforms (eventbrite, ticketmaster) using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoMarketingAutomation",
+    "id": "gap-no-marketing-automation/history",
+    "title": "No marketing automation",
+    "description": "Prepare a professional advisory report for no marketing automation using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoMultiVenueFranchiseChainManagement",
+    "id": "gap-no-multi-venue-franchise-chain-management/history",
+    "title": "No multi-venue franchise/chain management",
+    "description": "Prepare a professional advisory report for no multi-venue franchise/chain management using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoNotificationsSubsystem",
+    "id": "gap-no-notifications-subsystem/history",
+    "title": "No notifications subsystem",
+    "description": "Prepare a professional advisory report for no notifications subsystem using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoPaymentProcessingIntegration",
+    "id": "gap-no-payment-processing-integration/history",
+    "title": "No payment processing integration",
+    "description": "Prepare a professional advisory report for no payment processing integration using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  },
+  {
+    "name": "GapNoWebhooks",
+    "id": "gap-no-webhooks/history",
+    "title": "No webhooks",
+    "description": "Prepare a professional advisory report for no webhooks using the brief and evidence you provide. Review the findings, assumptions, and action plan before applying changes.",
+    "samples": []
+  }
+]

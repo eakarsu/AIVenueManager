@@ -1,3 +1,4 @@
+import CompleteAIExamples, { AIRequiredButton } from "../components/CompleteAIExamples";
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import AIResponse from '../components/AIResponse';
@@ -14,6 +15,7 @@ export default function SeatRecommendPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
+  const [selectedHistory, setSelectedHistory] = useState(null);
 
   useEffect(() => {
     api.get('/events?limit=200').then(res => {
@@ -71,26 +73,30 @@ export default function SeatRecommendPage() {
 
       <div className="detail-view">
         <h3 style={{ color: '#f1f5f9', marginBottom: 12 }}>Find the Best Seats</h3>
-        <form onSubmit={handleRecommend}>
+        <CompleteAIExamples busy={loading} context="Venue seating planning" presets={[
+          { values: { party_size: 2, accessibility_needs: 'Hypothetical request: step-free access for the group; confirm requirements with the guests.', budget_max: 60, view_preference: 'center' } },
+          { values: { party_size: 4, accessibility_needs: 'Hypothetical request: a clear aisle for the group; confirm requirements with the guests.', budget_max: 100, view_preference: 'aisle' } },
+          { values: { party_size: 6, accessibility_needs: 'Hypothetical request: hearing-assistance availability; confirm requirements with the guests.', budget_max: 150, view_preference: 'front' } }
+        ]}><form onSubmit={handleRecommend}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16 }}>
             <div className="form-group">
               <label>Event *</label>
-              <select value={form.event_id} onChange={e => setForm({ ...form, event_id: e.target.value })} required>
+              <select data-ai-field="event_id" value={form.event_id} onChange={e => setForm({ ...form, event_id: e.target.value })} required>
                 <option value="">Select an event...</option>
                 {events.map(ev => <option key={ev.id} value={ev.id}>{ev.name} ({new Date(ev.date).toLocaleDateString()})</option>)}
               </select>
             </div>
             <div className="form-group">
               <label>Party Size *</label>
-              <input type="number" min="1" max="20" value={form.party_size} onChange={e => setForm({ ...form, party_size: e.target.value })} required />
+              <input data-ai-field="party_size" type="number" min="1" max="20" value={form.party_size} onChange={e => setForm({ ...form, party_size: e.target.value })} required />
             </div>
             <div className="form-group">
               <label>Max Budget per Seat ($)</label>
-              <input type="number" step="0.01" value={form.budget_max} onChange={e => setForm({ ...form, budget_max: e.target.value })} placeholder="Optional" />
+              <input data-ai-field="budget_max" type="number" step="0.01" value={form.budget_max} onChange={e => setForm({ ...form, budget_max: e.target.value })} placeholder="Optional" />
             </div>
             <div className="form-group">
               <label>View Preference</label>
-              <select value={form.view_preference} onChange={e => setForm({ ...form, view_preference: e.target.value })}>
+              <select data-ai-field="view_preference" value={form.view_preference} onChange={e => setForm({ ...form, view_preference: e.target.value })}>
                 <option value="any">Any</option>
                 <option value="center">Center / Best View</option>
                 <option value="front">Close to Front</option>
@@ -100,15 +106,15 @@ export default function SeatRecommendPage() {
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label>Accessibility Needs</label>
-              <input value={form.accessibility_needs} onChange={e => setForm({ ...form, accessibility_needs: e.target.value })} placeholder="e.g. wheelchair, hearing assistance, none" />
+              <input data-ai-field="accessibility_needs" value={form.accessibility_needs} onChange={e => setForm({ ...form, accessibility_needs: e.target.value })} placeholder="e.g. wheelchair, hearing assistance, none" />
             </div>
           </div>
           <div style={{ marginTop: 16 }}>
-            <button type="submit" className="btn btn-ai" disabled={loading}>
+            <AIRequiredButton data-ai-generate type="submit" className="btn btn-ai" disabled={loading}>
               {loading ? '⏳ Finding Seats...' : '🤖 Get AI Recommendations'}
-            </button>
+            </AIRequiredButton>
           </div>
-        </form>
+        </form></CompleteAIExamples>
       </div>
 
       {/* Loading */}
@@ -177,6 +183,7 @@ export default function SeatRecommendPage() {
           </div>
         </div>
       )}
+      {r && <AIResponse data={result} loading={false} />}
 
       {/* History */}
       {history.length > 0 && (
@@ -194,12 +201,13 @@ export default function SeatRecommendPage() {
                     <td>{h.event_name}</td>
                     <td>{h.party_size}</td>
                     <td>{h.budget_max ? `$${h.budget_max}` : '—'}</td>
-                    <td>{h.result?.recommended_seats?.[0] ? `${h.result.recommended_seats[0].section} · Row ${h.result.recommended_seats[0].row}` : '—'}</td>
+                    <td>{h.result?.recommended_seats?.[0] ? `${h.result.recommended_seats[0].section} · Row ${h.result.recommended_seats[0].row}` : '—'} <button type="button" onClick={() => setSelectedHistory(h)}>View report</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {selectedHistory && <AIResponse data={{ parsed: selectedHistory.result }} loading={false} />}
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+import CompleteAIExamples, { AIRequiredButton } from "../components/CompleteAIExamples";
 import React, { useState } from 'react';
 import api from '../services/api';
 import AIResponse from '../components/AIResponse';
@@ -39,25 +40,29 @@ export default function AISchedulingOptimizerPage() {
       <div className="page-header"><h1>AI Scheduling Optimizer</h1></div>
       <div className="detail-view">
         <h3 style={{ color: '#f1f5f9', marginBottom: 12 }}>Cannibalization & lineup analysis</h3>
-        <form onSubmit={submit}>
+        <CompleteAIExamples presets={[
+          {values:{windowDays:14,capacity:500,eventsText:'Hypothetical Friday acoustic show\nHypothetical Saturday comedy evening',marketText:'Hypothetical nearby Friday arts festival'}},
+          {values:{windowDays:30,capacity:700,eventsText:'Hypothetical Thursday jazz evening\nHypothetical Saturday family matinee',marketText:'Hypothetical competing Saturday music event'}},
+          {values:{windowDays:60,capacity:1000,eventsText:'Hypothetical weekend theater series\nHypothetical midweek chamber concert',marketText:'Hypothetical regional holiday festival'}},
+        ]} busy={loading} context="Venue planning review"><form onSubmit={submit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
-            <div className="form-group"><label>Cannibalization window (days)</label><input type="number" value={windowDays} onChange={e => setWindowDays(e.target.value)} /></div>
-            <div className="form-group"><label>Venue capacity</label><input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} /></div>
+            <div className="form-group"><label>Cannibalization window (days)</label><input data-ai-field="windowDays" type="number" value={windowDays} onChange={e => setWindowDays(e.target.value)} /></div>
+            <div className="form-group"><label>Venue capacity</label><input data-ai-field="capacity" type="number" value={capacity} onChange={e => setCapacity(e.target.value)} /></div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label>Proposed events (JSON array or one per line)</label>
-              <textarea rows="4" value={eventsText} onChange={e => setEventsText(e.target.value)} />
+              <textarea data-ai-field="eventsText" rows="4" value={eventsText} onChange={e => setEventsText(e.target.value)} />
             </div>
             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
               <label>Competing market events (JSON array or one per line)</label>
-              <textarea rows="3" value={marketText} onChange={e => setMarketText(e.target.value)} />
+              <textarea data-ai-field="marketText" rows="3" value={marketText} onChange={e => setMarketText(e.target.value)} />
             </div>
           </div>
           <div style={{ marginTop: 16 }}>
-            <button type="submit" className="btn btn-ai" disabled={loading}>
+            <AIRequiredButton data-ai-generate type="submit" className="btn btn-ai" disabled={loading}>
               {loading ? 'Analyzing...' : 'Run Scheduling Optimizer'}
-            </button>
+            </AIRequiredButton>
           </div>
-        </form>
+        </form></CompleteAIExamples>
       </div>
       <div style={{ marginTop: 16 }}><AIResponse data={data} loading={loading} /></div>
     </div>
