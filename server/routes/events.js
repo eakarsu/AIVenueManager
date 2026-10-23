@@ -11,10 +11,25 @@ const paginate = (query) => {
   return { limit, offset: (page - 1) * limit, page };
 };
 
+router.get('/export', auth, async (req, res) => {
+  try {
+    const fp = require('./featurePack');
+    const rows = (await Event.findAll({ order: [['date','ASC']] })).map(x=>x.toJSON());
+    const filtered = fp.filterRecords(rows, req.query);
+    if (String(req.query.format||'json').toLowerCase()==='csv') { res.setHeader('Content-Type','text/csv'); res.setHeader('Content-Disposition','attachment; filename="events.csv"'); return res.send(fp.toCsv(filtered)); }
+    res.json({ resource:'events', total: filtered.length, items: filtered });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 router.get('/', auth, async (req, res) => {
   try {
     const { limit, offset, page } = paginate(req.query);
-    const { count, rows } = await Event.findAndCountAll({ order: [['date', 'ASC']], limit, offset });
+    const { Op } = require('sequelize');
+    const where = {};
+    if (req.query.status) where.status = req.query.status;
+    if (req.query.type) where.type = req.query.type;
+    if (req.query.q || req.query.search) { const q = req.query.q || req.query.search; where[Op.or] = [{name:{[Op.iLike]:`%${q}%`}},{venue:{[Op.iLike]:`%${q}%`}},{genre:{[Op.iLike]:`%${q}%`}}]; }
+    const { count, rows } = await Event.findAndCountAll({ where, order: [['date', 'ASC']], limit, offset });
     res.json({ data: rows, pagination: { total: count, page, limit, totalPages: Math.ceil(count / limit) } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

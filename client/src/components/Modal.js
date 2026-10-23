@@ -3,7 +3,7 @@ import React from 'react';
 export default function Modal({ title, children, onClose, onSave, saveLabel = 'Save' }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <h2>{title}</h2>
         {children}
         <div className="modal-actions">

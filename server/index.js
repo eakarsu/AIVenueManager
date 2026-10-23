@@ -64,6 +64,17 @@ app.use('/api/gap-no-audit-logging', require('./routes/gapNoAuditLogging'));
 app.use('/api/gap-no-notifications-subsystem', require('./routes/gapNoNotificationsSubsystem'));
 app.use('/api/gap-no-multi-venue-franchise-chain-management', require('./routes/gapNoMultiVenueFranchiseChainManagement'));
 
+try {
+  const fp = require('./routes/featurePack');
+  const { Event } = require('./models');
+  const { router: fpRouter, store: fpStore } = fp.createFeaturePackRouter({
+    authenticate: auth,
+    getRecords: async () => (await Event.findAll({ order: [['date','ASC']] })).map(x => x.toJSON()),
+    aiFeatures: fp.aiFeatures(), resourceName: 'events',
+  });
+  app.use('/api/feature-pack', fpRouter);
+  app.use('/api/tasks', fp.createTasksRouter(fpStore, auth));
+} catch (e) { console.warn('[feature-pack]', e.message); }
 app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
